@@ -1,0 +1,270 @@
+
+###### --- Working with Rackspace Cloud Files containers using curl - Basics --- ######
+
+To be able to follow up this guide you will need to have installed "curl" and "jq" tools, on your Linux server/computer
+
+~$ apt-get install curl jq
+
+~$ yum install curl jq
+
+
+
+Identity URL Endpoint for US Region --> https://identity.api.rackspacecloud.com/v2.0/tokens
+
+Identity URL Endpoint for UK London Region --> https://lon.identity.api.rackspacecloud.com/v2.0/tokens
+
+https://docs.rackspace.com/docs/cloud-identity-v2-getting-started-authenticate
+https://docs-ospc.rackspace.com/cloud-files/v1/getting-started/authenticate.html
+
+
+### Get API Token
+
+~$ curl -s -X "POST" "https://identity.api.rackspacecloud.com/v2.0/tokens" \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+-d '{
+  "auth": {
+    "RAX-KSKEY:apiKeyCredentials": {
+      "username": "${username}",
+      "apiKey": "${api_key}"
+    }
+  }
+}' | jq -r '.access.token.id'
+
+
+### Get Cloud Files MOSSO ID
+
+# MossoCloudFS_XXXXXX
+ 
+~$ curl -s -X POST "https://identity.api.rackspacecloud.com/v2.0/tokens" \
+-H 'Content-Type: application/json' \
+-d '{
+  "auth": {
+    "RAX-KSKEY:apiKeyCredentials": {
+      "username": "${username}",
+      "apiKey": "${api_key}"
+    }
+  }
+}' | jq -r '.access.serviceCatalog[] | select (.name == "cloudFiles") | .endpoints[0].tenantId'
+
+
+### Get Cloud Files US Region Storage Access Endpoints
+
+~$ curl -s -X POST "https://identity.api.rackspacecloud.com/v2.0/tokens" \
+-H 'Content-Type: application/json' \
+-d '{
+  "auth": {
+    "RAX-KSKEY:apiKeyCredentials": {
+      "username": "${username}",
+      "apiKey": "${api_key}"
+    }
+  }
+}' | jq -r '.access.serviceCatalog[] | select (.name == "cloudFiles") | .endpoints[]'
+
+
+# Example:
+
+REGION   PUBLICNET                                                       SERVICENET
+DFW      https://storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD      https://storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD      https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD      https://storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG      https://storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON      https://storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+
+
+### Get Cloud Files CDN Endpoints
+
+~$ curl -s -X POST "https://identity.api.rackspacecloud.com/v2.0/tokens" \
+-H 'Content-Type: application/json' \
+-d '{
+  "auth": {
+    "RAX-KSKEY:apiKeyCredentials": {
+      "username": "${username}",
+      "apiKey": "${api_key}"
+    }
+  }
+}' | jq -r '.access.serviceCatalog[] | select (.name == "cloudFilesCDN") | .endpoints[]'
+
+
+# Example
+DFW --> https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD --> https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON --> https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD --> https://cdn4.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD --> https://cdn5.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG --> https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
+
+
+### Get Rackspace CDN Endpoints
+
+~$ curl -s -X POST "https://identity.api.rackspacecloud.com/v2.0/tokens" -H 'Content-Type: application/json' -d '{
+  "auth": {
+    "RAX-KSKEY:apiKeyCredentials": {
+      "username": "${username}",
+      "apiKey": "${api_key}"
+    }
+  }
+
+
+# Example:
+https://global.cdn.api.rackspacecloud.com/v1.0/${TENANT_ID}
+
+
+
+### Define needed variables
+STORAGE_URL="https://storage101.${dataCenter}.clouddrive.com/v1/MossoCloudFS_XXXXXX"
+CONTAINER="${CONTAINER_NAME}"
+TOKEN="${IMPERSONATION_TOKEN}"
+
+
+### Create multiple containers
+for i in $(seq 10 20); do
+    echo "Creating mycf${i} ..."
+    curl -X PUT -H "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/mycf${i}
+    echo
+done
+
+
+### Create multiple test files on a local computer
+for i in $(seq 10 20); do
+    echo "CREATING file${i} ..."
+    fallocate -l 10M file${i}
+    echo
+done
+
+
+### Upload all files from your current working directory to a cf container
+for file in $(ls file*); do
+    echo
+    echo "UPLOADING $file ..."
+    echo
+    curl --progress-bar -# -i -XPUT -H "X-Auth-Token: ${TOKEN}" "${STORAGE_URL}/${CONTAINER}/${file}" -T "${file}" | cat
+    echo
+done
+
+
+### Upload all the content of your current working directory to multiple containers
+for CONTAINER in mycf{10..20}; do for file in $(ls file*); do echo "Uploading object ${file} to container ${CONTAINER}" && curl --progress-bar -# -i -XPUT -H "X-Auth-Token: ${TOKEN}" "${STORAGE_URL}/${CONTAINER}/${file}" -T "${file}" | cat ; done ; done
+
+
+### Create container list
+curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL} >> cflist.txt
+
+
+### Create object list
+curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER} >> objlist.txt
+
+
+### Download all objects from specific cf container
+for file in $(curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/); do
+    echo
+    echo "DOWNLOADING $file ..."
+    echo
+    curl --progress-bar -# -i -XGET -H "X-Auth-Token: ${TOKEN}" "${STORAGE_URL}/${CONTAINER}/${file}" -o "${file}" | cat
+    echo
+done
+
+
+### Another option
+
+Also works instead of "-o "${file}" just hyphen capital letter O "-O"
+for file in $(curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/); do
+    echo
+    echo "DOWNLOADING $file ..."
+    echo
+    curl --progress-bar -# -i -XGET -H "X-Auth-Token: ${TOKEN}" "${STORAGE_URL}/${CONTAINER}/${file}" -O | cat
+    echo
+done
+
+
+### wget public documents
+
+https://write.corbpie.com/downloading-all-files-and-folders-with-wget/
+https://www.atlantic.net/dedicated-server-hosting/how-to-download-file-using-wget-in-linux/
+https://stackoverflow.com/questions/11124292/why-does-wget-only-download-the-index-html-for-some-websites
+https://unix.stackexchange.com/questions/72240/download-files-and-create-same-file-structure-as-the-source
+
+## -l,  --level=NUMBER       maximum recursion depth (inf or 0 for infinite).
+~$ wget -x -l 10 $URL
+
+
+### Download all objects from a list of cf containers keeping directory structure ( Will download a file named "index.html.tmp" ).
+for CONTAINER in $(cat cflist.txt); do
+    echo "#############################################################################"
+    echo
+    echo "##################### DOWNLOADING ${CONTAINER} ##############################"
+    echo
+    echo "#############################################################################"
+    wget -x -np -nH --cut-dirs=2 -R "index.html*" -i "${STORAGE_URL}/${CONTAINER}/" --header="Content-Type: application/json" --header="X-Auth-Token: ${TOKEN}"
+    echo
+done
+
+
+### Another option
+
+### Download all objects from a list of cf containers keeping directory structure ( Will increase the size of files 1 MB )
+for CONTAINER in $(cat cflist.txt); do for file in $(curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/); do echo "###### DOWNLOADING object ${file} from container ${CONTAINER} ######" ; if [ -e "${CONTAINER}" ]; then cd "${CONTAINER}" ; else mkdir "${CONTAINER}" ;cd "${CONTAINER}"; fi ; curl --progress-bar -# -i -XGET -H "X-Auth-Token: ${TOKEN}" "${STORAGE_URL}/${CONTAINER}/${file}" -O | cat ; cd .. ; done ; done
+
+
+### Delete all objects from specific cf container
+for file in $(curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/); do
+    echo
+    echo "DELETING ${file} ..."
+    echo
+    curl --progress-bar -# -i -XDELETE -H "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/${file} | cat
+    echo
+done
+
+
+### Delete all items contained in object_list.txt for a specific container
+### If customer has any naming convention that is not following best practices ( no spaces, using only underscores and hyphens ), an encoder can be used
+ 
+## https://docs.rackspace.com/docs/best-practices-for-using-cloud-files
+ 
+## https://www.urlencoder.org/
+ 
+### In the following example customer is using character "/"
+ 
+### Filter items to be added and overwrite object_list.txt
+ 
+curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER} | grep "/tmp/run-" > object_list.txt
+ 
+### Filter items to be added and append more items to object_list.txt
+ 
+curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER} | grep "/tmp/run-" >> object_list.txt
+ 
+### Delete all items contained in object_list.txt
+ 
+for file in $(object_list.txt); do
+    echo
+    echo "DELETING ${file} ..."
+    echo
+    curl --progress-bar -# -i -XDELETE -H "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/${file} | cat
+    echo
+done
+
+
+### Delete all objects from a list of cf containers
+for CONTAINER in $(cat cflist.txt); do for file in $(curl -sH "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/); do echo "Deleting object ${file} from container ${CONTAINER} ..." ; curl --progress-bar -# -i -XDELETE -H "X-Auth-Token: ${TOKEN}" ${STORAGE_URL}/${CONTAINER}/${file} | cat ; done ; done
+
+
+
+### Related Articles
+
+https://docs-ospc.rackspace.com/cloud-files/v1/general-api-info/service-access.html
+https://docs.rackspace.com/docs/cloud-files-curl-cookbook
+https://docs-ospc.rackspace.com/cloud-files/v1/storage-api-reference/container-services-operations.html
+https://docs-ospc.rackspace.com/cloud-files/v1/use-cases/bulk-operations.html
+https://github.com/sara-nl/swiftdocs/blob/master/source/Pages/Clients/curl.rst
+
+https://linux.die.net/man/1/curl
+https://docs-ospc.rackspace.com/user-guides/infrastructure/cloud-interfaces/cli/curl
+https://www.warp.dev/terminus/curl-file-upload
+https://stackoverflow.com/questions/4847854/bash-shell-nested-for-loop
+https://unix.stackexchange.com/questions/72240/download-files-and-create-same-file-structure-as-the-source
+https://unix.stackexchange.com/questions/255652/linux-bash-if-statement-inside-for-loop
+https://stackoverflow.com/questions/12030316/nesting-if-in-a-for-loop
+
+
+
