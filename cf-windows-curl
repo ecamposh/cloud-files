@@ -1,0 +1,80 @@
+
+###### --- Working with Rackspace Cloud Files containers using curl under Windows CMD --- ######
+
+# Download curl binary for Windows
+
+# Remember by default curl command under Windows PowerShell is only an alias for Invoke-WebRequest cmdlet, and that works really different from normal curl.
+
+https://curl.se/windows/dl-8.12.1_4/curl-8.12.1_4-win64-mingw.zip
+
+# Create file credentials.txt with the following content (any json stream payload needs to be worked like this)
+
+{"auth":{"RAX-KSKEY:apiKeyCredentials":{"username":"<Your Username>","apiKey":"<Your API Key>"}}}
+
+# Obtain API Token
+
+curl.exe -s https://identity.api.rackspacecloud.com/v2.0/tokens ^
+       -X POST ^
+       -d @credentials.txt ^
+       -H "Content-type: application/json"
+
+# json response body fragment
+
+"RAX-AUTH:authenticatedBy":["APIKEY"],"id":"XXXXXXXXXXXX","tenant":{"name":"tenant_id","id":"tenant_id"
+
+"id":"XXXXXXXXXXXX" <-- API Token
+
+For UK London region --> "https://lon.identity.api.rackspacecloud.com/v2.0/tokens"
+
+https://docs.rackspace.com/reference/offerings-authenticate-to-the-rackspace-cloud
+https://docs.rackspace.com/reference/cloud-identity-v2-getting-started-authenticate
+https://docs-ospc.rackspace.com/cloud-files/v1/getting-started/authenticate.html
+https://docs.rackspace.com/reference/ticketing-how-to-use-curl#convert-curl-examples-to-run-on-windows
+  
+# Declare variables
+
+SET token=XXXXXXXXXXXX
+
+https://docs.rackspace.com/docs/about-regions
+SET region=dfw
+
+SET tenant_id=<Cloud Account Number>
+
+SET storage_url="https://storage101.${dataCenter}.clouddrive.com/v1/MossoCloudFS_XXXXXX"
+
+# Cloud Files Storage Access Endpoints
+REGION   PUBLICNET                                                       SERVICENET
+DFW      https://storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD      https://storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD      https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD      https://storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG      https://storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON      https://storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+
+# Cloud Files CDN Endpoints
+DFW --> https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD --> https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON --> https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD --> https://cdn4.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD --> https://cdn5.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG --> https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
+
+# Rackspace CDN endpoint
+https://global.cdn.api.rackspacecloud.com/v1.0/%tenant_id%
+
+Other endpoints
+https://docs.rackspace.com/docs/secure-cloud-files-and-cdn-urls
+
+SET container=my_container
+
+SET object=my_object
+
+# Create a container
+curl.exe -X PUT -H "X-Auth-Token: %token%" %storage_url%/%container%
+
+# Upload an object to a container
+curl.exe -X PUT -T %object% -H "Content-Type: image/jpeg" https://www.example.com/upload
+
+# Download an Object from a container
+curl.exe -H "X-Auth-Token: %token%" ${STORAGEURL}/${CONTAINER}/${OBJECT} -o ${FILENAME}
+
