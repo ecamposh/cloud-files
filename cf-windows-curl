@@ -5,7 +5,7 @@
 
 # Remember by default curl command under Windows PowerShell is only an alias for Invoke-WebRequest cmdlet, and that works really different from normal curl.
 
-https://curl.se/windows/dl-8.12.1_4/curl-8.12.1_4-win64-mingw.zip
+https://curl.se/windows/
 
 # Create file credentials.txt with the following content (any json stream payload needs to be worked like this)
 
@@ -42,6 +42,8 @@ SET tenant_id=<Cloud Account Number>
 
 SET storage_url="https://storage101.${dataCenter}.clouddrive.com/v1/MossoCloudFS_XXXXXX"
 
+https://docs-ospc.rackspace.com/cloud-files/v1/general-api-info/service-access.html
+
 # Cloud Files Storage Access Endpoints
 REGION   PUBLICNET                                                       SERVICENET
 DFW      https://storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX
@@ -50,14 +52,6 @@ IAD      https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https:/
 SYD      https://storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX
 HKG      https://storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX
 LON      https://storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX
-
-# Cloud Files CDN Endpoints
-DFW --> https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
-ORD --> https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
-LON --> https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
-SYD --> https://cdn4.clouddrive.com/v1/MossoCloudFS_XXXXXX
-IAD --> https://cdn5.clouddrive.com/v1/MossoCloudFS_XXXXXX
-HKG --> https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
 
 # Rackspace CDN endpoint
 https://global.cdn.api.rackspacecloud.com/v1.0/%tenant_id%
@@ -69,12 +63,109 @@ SET container=my_container
 
 SET object=my_object
 
+# Optional Attributes
+
+-H "Content-type: CONTENT/TYPE"
+
+-H "Content-Type: application/json"
+
+-H "Accept: application/json"
+
+-H "Etag: md5sum"
+
+-H "X-Meta-whateveryouwant: your-var-here"
+
+-XHEAD: This option specifies the HTTP method to use. In this case, HEAD is used. The HEAD method requests the headers from the server without fetching the body of the response. It's useful for checking what a GET request would return without actually downloading the content.
+
+-D -: This option tells curl to dump the headers to the specified file. The - means that the headers will be output to the standard output (usually the terminal).
+
+-o: This option specifies the output file where curl should write the data it retrieves. Normally, you would provide a filename here.
+
+/dev/null: This is a special file in Unix-like systems that discards all data written to it. It's often referred to as the "null device" or "bit bucket."
+
+# List Containers available
+curl.exe -H "X-Auth-Token: %token%" %storage_url%
+
 # Create a container
 curl.exe -X PUT -H "X-Auth-Token: %token%" %storage_url%/%container%
 
+# List containers content
+curl.exe -H "X-Auth-Token: %token%" %storage_url%/%container%
+
 # Upload an object to a container
-curl.exe -X PUT -T %object% -H "Content-Type: image/jpeg" https://www.example.com/upload
+curl.exe -X PUT -T "%object%" -H "X-Auth-Token: %token%" %storage_url%/%container%/%object%
 
 # Download an Object from a container
-curl.exe -H "X-Auth-Token: %token%" ${STORAGEURL}/${CONTAINER}/${OBJECT} -o ${FILENAME}
+curl.exe -H "X-Auth-Token: %token%" %storage_url%/%container%/%object% -o %object%
+
+curl.exe -H "X-Auth-Token: %token%" %storage_url%/%container%/%object% -O
+
+# Get Container Metadata
+curl.exe -X HEAD -D - -H "X-Auth-Token: %token%" %storage_url%/%container%
+
+# Get Object Metadata
+curl.exe -X HEAD -D - -H "X-Auth-Token: %token%" %storage_url%/%container%/%object%
+
+# Change Object MetaData
+curl.exe -X POST -H "X-Auth-Token: %token%" -H "X-Meta-CHANGE-ME: THE-META-DATA" %storage_url%/%container%/%object%
+
+# Change Container MetaData
+curl.exe -X POST -H "X-Auth-Token: %token%" -H "X-Meta-CHANGE-ME: THE-META-DATA" %storage_url%/%container%
+
+https://docs-ospc.rackspace.com/cloud-files/v1/storage-api-reference/container-services-operations.html#create-or-update-container-metadata
+https://docs-ospc.rackspace.com/cloud-files/v1/storage-api-reference/object-services-operations.html#create-or-update-object
+https://docs-ospc.rackspace.com/cloud-files/v1/storage-api-reference/object-services-operations.html#Create-or-update-object-metadata
+
+# Delete an Object
+curl.exe -X DELETE -H "X-Auth-Token: %token%" %storage_url%/%container%/%object%
+
+# Delete a Container
+NOTE: The container must be empty before trying to delete it, otherwise You will get a '409 Error Processing'.
+curl.exe -X DELETE -H "X-Auth-Token: %token%" %storage_url%/%container%
+
+# Enable Access Logs on specific container
+curl.exe -X POST -H "X-Auth-Token: %token%" -H "X-Container-Meta-Access-Log-Delivery: True" %storage_url%/%container%
+
+# Cloud Files CDN Endpoints
+
+SET mgtcdn_url=
+
+DFW --> https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD --> https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON --> https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD --> https://cdn4.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD --> https://cdn5.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG --> https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
+
+# List CDN enabled containers
+curl.exe -H "X-Auth-Token: %token%" %mgtcdn_url%
+
+# Get CDN Container Metadata
+curl.exe -X HEAD -D - -H "X-Auth-Token: %token%" %mgtcdn_url%/%container%
+
+# Get CDN Object Metadata
+curl.exe -X HEAD -D - -H "X-Auth-Token: %token%" %mgtcdn_url%/%container%/%object%
+
+# Purge Object from CDN
+curl.exe -X DELETE -H "X-Auth-Token: %token%" %mgtcdn_url%/%container%/%object%
+
+# Enable CDN for a Container
+curl.exe -X PUT -H "X-CDN-Enabled: True" -H "X-Auth-Token: %token%" %mgtcdn_url%/%container%
+
+# Disable CDN for a Container
+curl.exe -X PUT -H "X-CDN-Enabled: False" -H "X-Auth-Token: %token%" %mgtcdn_url%/%container%
+
+# Enable CDN logs on specific container
+curl.exe -i -X POST -H "X-Log-Retention: True" -H "X-Auth-Token: %token%" %mgtcdn_url%/%container%
+
+# Disable CDN logs on specific container
+curl.exe -i -X POST -H "X-Log-Retention: False" -H "X-Auth-Token: %token%" %mgtcdn_url%/%container%
+
+# To change TTL on a CDN enabled container
+curl.exe -X PUT -H "X-Auth-Token: %token%" -H "x-ttl: %time_in_seconds%" %mgtcdn_url%/%container%
+
+https://docs-ospc.rackspace.com/cloud-files/v1/cdn-api-reference/cdn-container-services-operations.html#update-cdn-enabled-container-metadata
+
+
+
 
