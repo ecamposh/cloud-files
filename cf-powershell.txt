@@ -182,8 +182,38 @@ $IAD_storageUrl = $response.access.serviceCatalog |
 ​
 ## Obtaining HKG region Storage101 Access Endpoint
 $HKG_storageUrl = $response.access.serviceCatalog | Where-Object { $_.name -eq "cloudFiles" } | Select-Object -ExpandProperty endpoints | Select-Object -Last 1 -ExpandProperty publicURL
+
+
+https://docs-ospc.rackspace.com/cloud-files/v1/general-api-info/service-access.html
+
+# Cloud Files Storage Access Endpoints
+REGION   PUBLICNET                                                       SERVICENET
+DFW      https://storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD      https://storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD      https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD      https://storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.syd2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG      https://storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.hkg1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON      https://storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+
+# Cloud Files CDN enabled Endpoints
+DFW --> https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD --> https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON --> https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD --> https://cdn4.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD --> https://cdn5.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG --> https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
 ​
+# Rackspace CDN endpoint
+tenantId --> Rackspace Customer Cloud Account Number
+https://docs.rackspace.com/reference/identity-concepts#tenant
+https://docs.rackspace.com/reference/ticketing-get-credentials
+
+https://global.cdn.api.rackspacecloud.com/v1.0/$tenantId
+
+Other endpoints
+https://docs.rackspace.com/docs/secure-cloud-files-and-cdn-urls
 ​
+
 ###### --- Define the containers you want to download --- ######
 $containers = @("container1", "container2", "container3")
 ​
@@ -381,3 +411,10 @@ $delete_obj = Invoke-WebRequest -Uri "$STORAGE_URL/$CONTAINER/$OBJECT" -Method D
 ### Remember that container needs to be empty in order to be able to delete it, otherwise you will get a conflict error
 ​
 $delete_con = Invoke-WebRequest -Uri "$STORAGE_URL/$CONTAINER" -Method Delete -Headers $headers
+
+
+### If needed cmdlet to generate an UUID ( similar to linux command uuidgen )
+New-Guid
+
+
+
