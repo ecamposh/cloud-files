@@ -1,0 +1,383 @@
+
+###### --- Working with Rackspace Cloud Files using Windows PowerShell --- ######
+
+###### --- Please be aware --- ######
+​
+curl command on Windows PowerShell is only an alias for "Invoke-WebRequest" cmdlet, and this cmdlet has a different way of handling strings, json streams and objects, in addition to different options (flags).
+​
+Get-Alias -Definition Invoke-WebRequest
+​
+CommandType     Name                                               Version    Source                                                                                   
+-----------     ----                                               -------    ------                                                                                   
+Alias           curl -> Invoke-WebRequest                                                                                                                              
+Alias           iwr -> Invoke-WebRequest                                                                                                                               
+Alias           wget -> Invoke-WebRequest                                                                                                                              
+​
+## If you want to use real curl tool you can download it from
+https://curl.se/windows/
+​
+Uncompress it into C:\Windows\System32\curl2.exe
+​
+Change the name so you won't confuse it with the alias from PowerShell, otherwise you will need to change permanently the alias.
+​
+###### --- Please first verify and establish the following values --- ######
+​
+### Temporarily establish TLS v1.2 protocol on current user
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+​
+### Temporarily establish TLS v1.2 protocol at system level
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+​
+### Establish execution policy to Unrestricted or RemoteSigned
+Get-ExecutionPolicy
+​
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force
+​
+###### --- Define your Rackspace credentials --- ######
+### Please use quotes
+  
+$apiKey = "${api_key}"
+$username = "${username}"
+$authUrl = "https://identity.api.rackspacecloud.com/v2.0/tokens"
+​
+## Auth URL for London region
+$authUrl = "https://lon.identity.api.rackspacecloud.com/v2.0/tokens"
+​
+​
+###### --- Authenticate and get the token --- ######
+$authBody = @{
+    auth = @{
+        "RAX-KSKEY:apiKeyCredentials" = @{
+            username = $username
+            apiKey = $apiKey
+        }
+    }
+} | ConvertTo-Json
+​
+​
+###### --- Obtaining the whole json stream output from Rackspace Public Cloud Identity Endpoint --- ######
+$authResponse = Invoke-RestMethod -Uri $authUrl -Method Post -Body $authBody -ContentType "application/json"
+​
+​
+###### --- Obtaining Impersonation Token --- ######
+$token = $authResponse.access.token.id
+​
+$token
+​
+​
+​
+###### --- Obtaining Cloud Files Storage Access Endpoints --- ######
+​
+### Method 1
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" }
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Format-List
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Select-Object -ExpandProperty endpoints
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Select-Object -ExpandProperty endpoints | Where-Object { $_.region -eq 'ORD' }
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Select-Object -ExpandProperty endpoints | Where-Object { $_.region -eq 'ORD' } | Select-Object -ExpandProperty publicURL
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Select-Object -ExpandProperty endpoints | Where-Object { $_.region -eq 'ORD' } | Select-Object -ExpandProperty internalURL
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Select-Object -ExpandProperty endpoints | Select-Object -ExpandProperty publicURL
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudFiles" }
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudFiles" } | Select-Object -ExpandProperty endpoints | Select-Object -ExpandProperty publicURL
+​
+#########################################
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudFilesCDN" } | Format-List
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudFilesCDN" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudFilesCDN" } | Select-Object -ExpandProperty endpoints | Where-Object { $_.region -eq 'ORD' } | Select-Object -ExpandProperty publicURL
+​
+$authResponse.access.serviceCatalog |
+Where-Object { $_.name -eq "cloudFilesCDN" } |
+Select-Object -ExpandProperty endpoints |
+Where-Object { $_.region -eq 'ORD' } |
+Select-Object -ExpandProperty publicURL
+​
+###########################################
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "rackCDN" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+#########################################
+​
+$authResponse.access.serviceCatalog `
+| Where-Object { $_.name -eq "cloudServersOpenStack" } `
+| Select-Object -ExpandProperty endpoints `
+| Format-List
+​
+###########################################
+​
+$script = @"
+\$authResponse.access.serviceCatalog |
+    Where-Object { \$.name -eq 'cloudServersOpenStack' } |
+    Select-Object -ExpandProperty endpoints |
+    Format-List
+"@
+​
+Invoke-Expression $script
+​
+###########################################
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudServersOpenStack" } | Select-Object -ExpandProperty endpoints | Where-Object { $_.region -eq 'DFW' }
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudServersOpenStack" } | Select-Object -ExpandProperty endpoints | Where-Object { $_.region -eq 'DFW' } | Select-Object -ExpandProperty publicURL
+​
+#########################################
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudNetworks" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+#########################################
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudBlockStorage" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+#########################################
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudImages" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+#########################################
+​
+$authResponse.access.serviceCatalog | Format-List
+​
+$authResponse.access.serviceCatalog | Select-Object -Property name
+​
+​
+​
+​
+### Method 2
+​
+## Obtaining DFW region Storage101 Access Endpoint
+$DFW_storageUrl = $response.access.serviceCatalog | Where-Object { $_.name -eq "cloudFiles" } | Select-Object -ExpandProperty endpoints | Select-Object -First 1 -ExpandProperty publicURL
+​
+​
+## Obtaining ORD region Storage101 Access Endpoint
+$ORD_storageUrl = $response.access.serviceCatalog |
+    Where-Object { $_.name -eq "cloudFiles" } |
+    Select-Object -ExpandProperty endpoints |
+    Select-Object -Skip 1 -First 1 -ExpandProperty publicURL
+​
+​
+## Obtaining SYD region Storage101 Access Endpoint
+$SYD_storageUrl = $response.access.serviceCatalog |
+    Where-Object { $_.name -eq "cloudFiles" } |
+    Select-Object -ExpandProperty endpoints |
+    Select-Object -Skip 2 -First 1 -ExpandProperty publicURL
+​
+​
+## Obtaining IAD region Storage101 Access Endpoint
+$IAD_storageUrl = $response.access.serviceCatalog |
+    Where-Object { $_.name -eq "cloudFiles" } |
+    Select-Object -ExpandProperty endpoints |
+    Select-Object -Skip 3 -First 1 -ExpandProperty publicURL
+​
+​
+## Obtaining HKG region Storage101 Access Endpoint
+$HKG_storageUrl = $response.access.serviceCatalog | Where-Object { $_.name -eq "cloudFiles" } | Select-Object -ExpandProperty endpoints | Select-Object -Last 1 -ExpandProperty publicURL
+​
+​
+###### --- Define the containers you want to download --- ######
+$containers = @("container1", "container2", "container3")
+​
+###### --- Stored Impersonation token into a variable --- ######
+$headers = @{
+    "X-Auth-Token" = $token
+}
+​
+​
+​
+###### --- LIST containers on the account on specific region --- ######
+Invoke-RestMethod -Uri "$storageUrl" -Method Get -Headers @{ "X-Auth-Token" = $token } -ContentType "application/json"
+​
+​
+#### List objects/files content on a container
+$inside_con = Invoke-WebRequest -Uri "$storageUrl/$containerName" -Headers @{ "X-Auth-Token" = $token } -ContentType "application/json"
+$inside_con.Content
+​
+​
+$inside_con_ir = Invoke-RestMethod -Uri "$storageUrl/$containerName" -Headers @{ "X-Auth-Token" = $token } -ContentType "application/json"
+​
+​
+​
+###### --- CREATE one container --- ######
+Invoke-WebRequest -Uri "$STORAGE_URL/$new_container" -Method Put -Headers $headers
+​
+#### Create multiple containers
+​
+## Sequence statement
+$con_seq = 10..20
+​
+$con_prefix = "echcf"
+​
+foreach ($i in $con_seq) {
+    Invoke-WebRequest -Uri "$STORAGE_URL/$con_prefix$i" -Method Put -Headers $headers
+}
+​
+## Create multiple number of files using powershell
+​
+# Set the desired size
+[Int64]$size = 10MB
+​
+# Specify the number of files you want to create
+[Int16]$AmountOfFiles = 5
+​
+# Loop to create many files
+for ($i = 0; $i -lt $AmountOfFiles; $i++) {
+    $f = New-Object System.IO.FileStream "C:\full\path\to\file$i.img", Create, ReadWrite
+    $f.SetLength($size)
+    $f.Close()
+}
+​
+​
+​
+###### --- Read the containers from cflist.txt --- ######
+$containers = Get-Content -Path "C:\files-to-download\cflist.txt"
+​
+###### --- Define the download path --- ######
+$downloadPath = "C:\full\path\to\directory"
+​
+###### --- Define full path to a cf container --- ######
+$containerUrl = "$storageUrl/$containerName"
+​
+### Check permissions on a directory
+Get-Acl $downloadPath | FL
+​
+### If you have issues while having long directory path names
+Get-ItemProperty 'HKLM:\System\CurrentControlSet\Control\FileSystem'
+​
+Set-ItemProperty 'HKLM:\System\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -value 1
+​
+​
+​
+​
+###### --- DOWNLOAD one object from a container --- ######
+$fileName = "file.txt"
+​
+Invoke-RestMethod -Uri "$containerUrl/$fileName" -Method Get -Headers @{ "X-Auth-Token" = $token } -OutFile "$downloadPath\$fileName"
+​
+​
+### Downloading the whole content of one container
+$containerObjectsResponse = Invoke-WebRequest -Uri $containerUrl -Method Get -Headers @{ "X-Auth-Token" = $token }
+​
+$containerObjects = $containerObjectsResponse.Content -split "`n"  # Split by newline
+​
+foreach ($fileName in $containerObjects) {
+    $fileName = $fileName.Trim()  # Remove any leading/trailing whitespace
+    $objectUrl = "$containerUrl/$fileName"
+    $filePath = "$downloadPath\$fileName"
+    Write-Output "Attempting to download: ###### $fileName ######"
+    Invoke-RestMethod -Uri $objectUrl -Method Get -Headers @{ "X-Auth-Token" = $token } -OutFile $filePath
+}
+​
+​
+## In the above example we needed to obtain what properties were available for the object
+$containerObjects | Get-Member
+​
+$containerObjects[0] | Format-List -Property *
+​
+foreach ($object in $containerObjects) {
+    Write-Output $object.Trim()
+}
+​
+​
+## Read the containers from file.txt
+$containersList = Get-Content -Path "C:\files_to_download\cflist.txt"
+​
+###### Function to download objects from a container
+function Download-Container {
+    param (
+        [string]$containerName
+    )
+​
+    $containerUrl = "$storageUrl/$containerName"
+    # List objects in the container
+    $containerObjectsResponse = Invoke-WebRequest -Uri $containerUrl -Method Get -Headers $headers
+    $containerObjects = $containerObjectsResponse.Content -split "`n"  # Split by newline
+​
+    foreach ($object in $containerObjects) {
+        if ($object.Trim() -eq "") {
+            continue  # Skip empty lines
+        }
+        $object = $object.Trim()
+        # Keep subfolder pseudo-hierarchy
+        $objectPath = Join-Path -Path $downloadPath -ChildPath $containerName
+        if (-Not (Test-Path -Path $objectPath)) {
+            New-Item -ItemType Directory -Path $objectPath
+        }
+        $objectFile = Join-Path -Path $objectPath -ChildPath $object
+        $objectUrl = "$storageUrl/$containerName/$object"
+        Write-Output "Attempting to download: ###### CF CONTAINER: $containerName -> $object ######"
+        Invoke-RestMethod -Uri $objectUrl -Method Get -Headers @{ "X-Auth-Token" = $token } -OutFile $objectFile
+    }
+}
+​
+###### Loop to Download each container listed on $containersList - goes together with the Function to download objects from a container.
+​
+foreach ($container in $containersList) {
+    if ($container.Trim() -eq "") {
+        continue  # Skip empty lines
+    }
+    Download-Container -containerName $container
+}
+​
+​
+​
+###### --- Creating big dummy files --- ######
+​
+## cmd
+fsutil file createnew <filename> <size in bytes>
+​
+## PowerShell
+​
+## Size can Kb, Mb, Gb (i.e. 10Mb)
+$file = [io.file]::Create("C:\full\path\to\file.txt")
+$file.SetLength(size)
+$file.close()
+​
+$OBJECT="file.txt"
+​
+### If no path is specify, path will be current working folder
+​
+$FILENAME="C:\full\path\to\file.txt"
+​
+​
+​
+###### --- UPLOAD one object to a container --- ######
+​
+$upload = Invoke-WebRequest -Uri "$STORAGE_URL/$CONTAINER/$OBJECT" `
+    -Method Put `
+    -Headers $headers `
+    -InFile $FILENAME
+​
+​
+#### Upload multiple files located in current working directory to multiple containers
+​
+$file_path = Get-ChildItem -File "C:\full\path\to\objects\directory"
+​
+foreach ($i in $con_seq) {
+    foreach ($file in $file_path){
+    Invoke-WebRequest -Uri "$STORAGE_URL/$con_prefix$i/$file" `
+    -Method Put `
+    -Headers $headers `
+    -InFile $file
+}
+}
+​
+​
+​
+###### --- DELETE an object from a specific container --- ######
+​
+$delete_obj = Invoke-WebRequest -Uri "$STORAGE_URL/$CONTAINER/$OBJECT" -Method Delete -Headers $headers
+​
+###### --- DELETE a specific container --- ######
+### Remember that container needs to be empty in order to be able to delete it, otherwise you will get a conflict error
+​
+$delete_con = Invoke-WebRequest -Uri "$STORAGE_URL/$CONTAINER" -Method Delete -Headers $headers
