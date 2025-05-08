@@ -87,7 +87,7 @@ LON      https://storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https:/
 }' | jq -r '.access.serviceCatalog[] | select (.name == "cloudFilesCDN") | .endpoints[]'
 
 
-# Example
+# Example:
 DFW --> https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
 ORD --> https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
 LON --> https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
@@ -98,17 +98,27 @@ HKG --> https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
 
 ### Get Rackspace CDN Endpoints
 
-~$ curl -s -X POST "https://identity.api.rackspacecloud.com/v2.0/tokens" -H 'Content-Type: application/json' -d '{
+~$ curl -s -X "POST" "https://identity.api.rackspacecloud.com/v2.0/tokens" \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+-d '{
   "auth": {
     "RAX-KSKEY:apiKeyCredentials": {
       "username": "${username}",
       "apiKey": "${api_key}"
     }
   }
+}' | jq -r '.access.serviceCatalog[] | select (.name == "rackCDN") | .endpoints[]'
 
 
-# Example:
-https://global.cdn.api.rackspacecloud.com/v1.0/${TENANT_ID}
+# json response body:
+
+{
+  "tenantId": "${TENANT_ID}",
+  "publicURL": "https://global.cdn.api.rackspacecloud.com/v1.0/${TENANT_ID}",
+  "internalURL": "https://global.cdn.api.rackspacecloud.com/v1.0/${TENANT_ID}",
+  "region": "DFW"
+}
 
 
 
