@@ -13,8 +13,10 @@ Identity URL Endpoint for US Region --> https://identity.api.rackspacecloud.com/
 
 Identity URL Endpoint for UK London Region --> https://lon.identity.api.rackspacecloud.com/v2.0/tokens
 
+https://docs.rackspace.com/reference/offerings-authenticate-to-the-rackspace-cloud
 https://docs.rackspace.com/docs/cloud-identity-v2-getting-started-authenticate
 https://docs-ospc.rackspace.com/cloud-files/v1/getting-started/authenticate.html
+https://docs-ospc.rackspace.com/cloud-files/v1/getting-started/send-request-ovw.html
 
 ### Get API Key
 Customer Portal (mycloud.rackspace.com) --> Rackspace Cloud --> Account --> User Management --> Select Username --> Security Settings --> Rackspace API Key --> Click "Show"
@@ -141,6 +143,8 @@ HKG      https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
   "region": "DFW"
 }
 
+
+https://docs-ospc.rackspace.com/cloud-files/v1/general-api-info/service-access.html
 
 
 ### Define needed variables
@@ -283,7 +287,6 @@ for CONTAINER in $(cat cflist.txt); do for file in $(curl -sH "X-Auth-Token: ${T
 
 ### Related Articles
 
-https://docs-ospc.rackspace.com/cloud-files/v1/general-api-info/service-access.html
 https://docs.rackspace.com/docs/cloud-files-curl-cookbook
 https://docs-ospc.rackspace.com/cloud-files/v1/storage-api-reference/container-services-operations.html
 https://docs-ospc.rackspace.com/cloud-files/v1/use-cases/bulk-operations.html
