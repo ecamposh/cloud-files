@@ -16,8 +16,14 @@ Identity URL Endpoint for UK London Region --> https://lon.identity.api.rackspac
 https://docs.rackspace.com/docs/cloud-identity-v2-getting-started-authenticate
 https://docs-ospc.rackspace.com/cloud-files/v1/getting-started/authenticate.html
 
+### Get API Key
+Customer Portal (mycloud.rackspace.com) --> Rackspace Cloud --> Account --> User Management --> Select Username --> Security Settings --> Rackspace API Key --> Click "Show"
+
+https://docs-ospc.rackspace.com/user-guides/infrastructure/cloud-interfaces/gui/setup-gui.html
 
 ### Get API Token
+
+${username}  <===  This symbolizes a variable
 
 ~$ curl -s -X "POST" "https://identity.api.rackspacecloud.com/v2.0/tokens" \
 -H 'Content-Type: application/json' \
@@ -30,6 +36,22 @@ https://docs-ospc.rackspace.com/cloud-files/v1/getting-started/authenticate.html
     }
   }
 }' | jq -r '.access.token.id'
+
+
+# Example command:
+
+~$ curl -s -X "POST" "https://identity.api.rackspacecloud.com/v2.0/tokens" \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+-d '{
+  "auth": {
+    "RAX-KSKEY:apiKeyCredentials": {
+      "username": "john.doe",
+      "apiKey": "ABCD1234567890WXYZ"
+    }
+  }
+}' | jq -r '.access.token.id'
+
 
 
 ### Get Cloud Files MOSSO ID
@@ -62,9 +84,8 @@ https://docs-ospc.rackspace.com/cloud-files/v1/getting-started/authenticate.html
 }' | jq -r '.access.serviceCatalog[] | select (.name == "cloudFiles") | .endpoints[]'
 
 
-# Example:
 
-REGION   PUBLICNET                                                       SERVICENET
+REGION   PUBLICNET URL                                                   SERVICENET URL
 DFW      https://storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.dfw1.clouddrive.com/v1/MossoCloudFS_XXXXXX
 ORD      https://storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.ord1.clouddrive.com/v1/MossoCloudFS_XXXXXX
 IAD      https://storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https://snet-storage101.iad3.clouddrive.com/v1/MossoCloudFS_XXXXXX
@@ -87,13 +108,13 @@ LON      https://storage101.lon3.clouddrive.com/v1/MossoCloudFS_XXXXXX   https:/
 }' | jq -r '.access.serviceCatalog[] | select (.name == "cloudFilesCDN") | .endpoints[]'
 
 
-# Example:
-DFW --> https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
-ORD --> https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
-LON --> https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
-SYD --> https://cdn4.clouddrive.com/v1/MossoCloudFS_XXXXXX
-IAD --> https://cdn5.clouddrive.com/v1/MossoCloudFS_XXXXXX
-HKG --> https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
+REGION   URL
+DFW      https://cdn1.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ORD      https://cdn2.clouddrive.com/v1/MossoCloudFS_XXXXXX
+LON      https://cdn3.clouddrive.com/v1/MossoCloudFS_XXXXXX
+SYD      https://cdn4.clouddrive.com/v1/MossoCloudFS_XXXXXX
+IAD      https://cdn5.clouddrive.com/v1/MossoCloudFS_XXXXXX
+HKG      https://cdn6.clouddrive.com/v1/MossoCloudFS_XXXXXX
 
 
 ### Get Rackspace CDN Endpoints
