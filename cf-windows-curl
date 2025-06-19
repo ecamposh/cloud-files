@@ -7,6 +7,8 @@
 
 https://curl.se/windows/
 
+https://github.com/jqlang/jq/releases/download/jq-1.8.0/jq-windows-amd64.exe
+
 # Create file credentials.txt with the following content (any json stream payload needs to be worked like this)
 
 {"auth":{"RAX-KSKEY:apiKeyCredentials":{"username":"<Your Username>","apiKey":"<Your API Key>"}}}
