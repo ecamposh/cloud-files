@@ -1,0 +1,301 @@
+
+###### --- Managing Rackspace Cloud Files containers using Rclone --- ######
+
+### Installation
+​
+# Linux
+https://rclone.org/install/#script-installation
+​
+Run this command to install rclone
+~$ sudo -v ; curl https://rclone.org/install.sh | sudo bash
+​
+​
+# Mac OS
+https://rclone.org/install/#macos
+​
+# Run this command to install rclone
+~$ brew install rclone
+​
+​
+# Windows
+https://rclone.org/install/#windows
+​
+1) Download the following file
+​
+https://downloads.rclone.org/rclone-current-windows-amd64.zip
+​
+2) Extract the folder contained in "rclone-current-windows-amd64.zip".
+​
+3) Open a CMD window.
+​
+4) Navigate through the extracted rclone folder and search for "rclone.exe" binary.
+​
+5) Run rclone.
+​
+​
+### Possible issues
+​
+# Win 11 Slow Command Start While on VPN - Suspected Bug - rclone forum
+https://forum.rclone.org/t/win-11-slow-command-start-while-on-vpn/43326/2
+​
+​
+# You can find other binaries in this link https://rclone.org/downloads/
+​
+​
+### Configuration
+​
+Only the first time after installing rclone, you will need to execute the configuration wizard dialogue, after that you can just add more remotes (account credentials) manually to remotes configuration file
+​
+# Check current config file path
+rclone config file
+​
+C:\Users\<user>\AppData\Roaming\rclone\rclone.conf
+​
+https://rclone.org/commands/rclone_config/
+​
+​
+# Configuring remotes through the wizard dialogue
+C:\rclone> rclone config
+ 
+ 
+No remotes found, make a new one?
+ 
+n) New remote
+s) Set configuration password
+q) Quit config
+n/s/q> n
+ 
+name> my_remote
+ 
+Type of storage to configure.
+ 
+Choose a number from below, or type in your own value
+ 
+35 / OpenStack Swift (Rackspace Cloud Files, Blomp Cloud Storage, Memset Memstore, OVH)
+   \ "swift"
+ 
+ 
+Storage> swift
+Get swift credentials from environment variables in standard OpenStack form.
+Choose a number from below, or type in your own value
+ 1 / Enter swift credentials in the next step
+   \ "false"
+ 
+ 
+user> your_username
+ 
+key> your api_key
+ 
+Choose a number from below, or type in your own value
+ 
+ 3 / Rackspace v2
+   \ "https://identity.api.rackspacecloud.com/v2.0"
+ 
+ 
+auth>
+User ID to log in - optional - most swift systems use user and leave this blank (v3 auth) (OS_USER_ID).
+user_id> ENTER key
+ 
+User domain - optional (v3 auth) (OS_USER_DOMAIN_NAME)
+domain> ENTER key
+ 
+Tenant name - optional for v1 auth, this or tenant_id required otherwise (OS_TENANT_NAME or OS_PROJECT_NAME)
+tenant> ENTER key
+ 
+Tenant ID - optional for v1 auth, this or tenant required otherwise (OS_TENANT_ID)
+tenant_id> ENTER key
+ 
+Tenant domain - optional (v3 auth) (OS_PROJECT_DOMAIN_NAME)
+tenant_domain> ENTER key
+ 
+Region name - optional (OS_REGION_NAME)
+region> REGION MUST BE TYPED WITH CAPITAL LETTERS!!!
+ 
+Storage URL - optional (OS_STORAGE_URL)
+storage_url> https://storage101.${DC}.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ 
+Auth Token from alternate authentication - optional (OS_AUTH_TOKEN)
+auth_token> ENTER key
+ 
+AuthVersion - optional - set to (1,2,3) if your auth URL has no version (ST_AUTH_VERSION)
+auth_version> ENTER key
+ 
+Endpoint type to choose from the service catalogue (OS_ENDPOINT_TYPE)
+ 
+Choose a number from below, or type in your own value
+ 1 / Public (default, choose this if not sure)
+   \ "public"
+ 
+endpoint_type>
+Remote config
+ 
+--------------------
+ 
+[my_remote]
+type = swift
+user = ${USERNAME}
+key = ${API_KEY}
+auth = https://identity.api.rackspacecloud.com/v2.0
+region = ${REGION} <--- capital letters must be used ---> DFW, ORD, IAD, SYD, HKG, LON
+​
+​
+## Optional
+storage_url = https://storage101.${DC}.clouddrive.com/v1/MossoCloudFS_XXXXXX
+ 
+ 
+## Remember that in order to use servicenet URL you need to be located on a cloud server created in the same region as the cloud file container.
+storage_url = https://snet-storage101.${DC}.clouddrive.com/v1/MossoCloudFS_XXXXXX
+​
+​
+## To obtain Cloud Files endpoints using Windows PowerShell
+​
+# https://docs.rackspace.com/docs/view-and-reset-your-api-key
+​
+# Declare variables
+$username = "<username>"
+$apiKey = "<redacted>"
+$authUrl = "https://identity.api.rackspacecloud.com/v2.0/tokens"
+​
+$authData = @{
+    auth = @{
+        "RAX-KSKEY:apiKeyCredentials" = @{
+            username = $username
+            apiKey = $apiKey
+        }
+    }
+}
+​
+# Authenticate and get the Impersonation Token
+$authResponse = Invoke-RestMethod -Uri $authUrl -Method Post -Body ($authData | ConvertTo-Json) -ContentType 'application/json'
+​
+# Visualize complete json body response
+$authResponse
+​
+# Filter cmdlet output to just display Impersonation Token
+$token = $authResponse.access.token.id
+​
+# Visualize Impersonation Token
+$token
+​
+​
+# Listing storage access endpoints
+​
+$authResponse.access.serviceCatalog | Select-Object -ExpandProperty name | Format-List
+​
+$authResponse.access.serviceCatalog | Select-Object -ExpandProperty type | Format-List
+​
+$authResponse.access.serviceCatalog | Select-Object -ExpandProperty endpoints | Format-List
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Format-List
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.type -eq "object-store" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudFiles" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+​
+# Listing CDN URL enable endpoints
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "cloudFilesCDN" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+​
+# Listing Rackspace CDN endpoint
+​
+$authResponse.access.serviceCatalog | Where-Object { $_.name -eq "rackCDN" } | Select-Object -ExpandProperty endpoints | Format-List
+​
+  
+--------------------
+ 
+If you were ask about advanced configurations just type n then ENTER key
+ 
+y) Yes this is OK
+e) Edit this remote
+d) Delete this remote
+y/e/d> y
+ 
+When finished just type q for quitting configuration dialogue
+​
+​
+# Listing containers
+rclone ls <my_remote>:
+​
+# Listing objects inside container
+rclone ls <my_remote>:<my_container>
+​
+# Clone containers (this will create my_container1 automatically )
+rclone sync <my_remote1>:<my_container1> <my_remote2>:<my_container1>
+​
+# Sync my local computer files to a container
+rclone -v sync ~/local/path/ <my_remote3>:<my_container2>
+​
+# Deleting all container objects and the container itself
+rclone -v purge  <my_remote>:<my_container>
+​
+-v <-- verbose
+​
+The '--dry-run' option is available.
+​
+# Downloading / uploading are achieved by using 'copy | copyto' command
+rclone copyto src dst
+​
+rclone copyto --progress <my_remote>:<my_container>/<my_object> /local/path/<my_object>
+​
+rclone copy --progress /local/path/<my_object> <my_remote>:<my_container>/<my_object>
+​
+​
+### https://rclone.org/filtering/#examples
+ 
+~$ cat rclonelist.txt
+- file.img
+- /image_dir/**
+ 
+## Assuming there is a subfolder inside "${my_container_01}" named "image_dir" with some files in it, and a file.img inside "${my_container_01}".
+ 
+rclone move ${my_remote_01}:${my_container_01}/ ${my_remote_02}:${my_container_02}/ --filter-from rclonelist.txt
+ 
+rclone copy ${my_remote_01}:${my_container_01}/ ${my_remote_02}:${my_container_02}/ --filter-from rclonelist.txt
+ 
+ 
+rclone ls ${CONFIG_NAME}:${CONTAINER}/${SUB_FOLDER_L1}/${SUB_FOLDER_L2}/${OBJECT}
+ 
+rclone copy ${CONFIG_NAME}:${CONTAINER}/${SUB_FOLDER_L1}/${SUB_FOLDER_L2}/${OBJECT} ~/${LOCAL_PATH}
+ 
+ 
+###### --- Copy a list of cf containers between accounts ( remotes: ) --- ######
+ 
+rclone copy ${REMOTE_1}:${CONTAINER}/ ${REMOTE_2}:${CONTAINER}/ --filter-from objects_exclude.txt
+ 
+for CONTAINER in $(cat cflist.txt); do
+    echo
+    echo "COPYING CONTAINER ${CONTAINER} ..."
+    rclone copy ${REMOTE_1}:${CONTAINER}/ ${REMOTE_2}:${CONTAINER}/
+    echo
+done
+​
+​
+## Common usage
+https://www.andyibanez.com/posts/rclone-basics-encryption/
+https://www.basezap.com/rclone-basic-commands/
+https://blog.cosmicqbit.dev/rclone-a-beginners-guide
+https://docs.ris.wustl.edu/doc/storage/rclone.html
+​
+https://rclone.org/swift/
+https://rclone.org/commands/rclone_listremotes/
+https://rclone.org/commands/rclone_ls/
+https://rclone.org/commands/rclone_lsd/
+https://rclone.org/commands/rclone_lsf/
+https://rclone.org/commands/rclone_lsl/
+https://rclone.org/commands/rclone_copy/
+https://rclone.org/commands/rclone_copyto/
+https://rclone.org/commands/rclone_sync/
+https://rclone.org/commands/rclone_move/
+https://rclone.org/commands/rclone_delete/
+https://rclone.org/commands/rclone_deletefile/
+https://rclone.org/commands/rclone_purge/
+https://rclone.org/commands/rclone_check/
+https://rclone.org/filtering/#exclude-exclude-files-matching-pattern
+https://rclone.org/ftp/
+​
+## Scripts
+https://forum.rclone.org/t/how-to-automate-rclone-move-with-a-bash-script/31567/3
+​
+​
